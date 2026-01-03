@@ -35,18 +35,11 @@ export const register = async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
 
-        // 5. Create User
-        // Note: We enforce the found campusId. Role defaults to 'student' in model if not provided,
-        // but we can allow it here if valid valid (or restrict it later to just student).
-        // For now, let's allow passing generic roles but maybe restrict admin creation?
-        // The prompt says "Reject invalid email domains" but implies standard registration.
-        // I'll allow role to be passed but default logic handles it.
-
         const newUser = new User({
             name,
             email,
             passwordHash,
-            role: role || "student", // Allow role override if needed, or default
+            role: role || "student",
             campusId: campus._id,
         });
 
@@ -82,6 +75,12 @@ export const login = async (req, res) => {
         const user = await User.findOne({ email });
         if (!user) {
             return res.status(401).json({ message: "Invalid credentials" });
+        }
+
+        if (!user.passwordHash) {
+            return res.status(401).json({ 
+                message: "This account was created with Google OAuth. Please sign in with Google." 
+            });
         }
 
         // 3. Compare Password

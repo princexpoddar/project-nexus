@@ -15,7 +15,13 @@ const userSchema = new mongoose.Schema(
         },
         passwordHash: {
             type: String,
-            required: true,
+            required: function() {
+                try {
+                    return !(this.$locals && this.$locals.isOAuthUser);
+                } catch (e) {
+                    return true;
+                }
+            },
         },
         role: {
             type: String,
@@ -35,6 +41,19 @@ const userSchema = new mongoose.Schema(
         timestamps: true,
     }
 );
+
+userSchema.pre("save", async function() {
+    if (this.$locals && this.$locals.isOAuthUser) {
+        if (!this.passwordHash || this.passwordHash === null || this.passwordHash === undefined || this.passwordHash === "") {
+            if (this.isNew) {
+                delete this.passwordHash;
+            } else {
+                this.$unset = this.$unset || {};
+                this.$unset.passwordHash = "";
+            }
+        }
+    }
+});
 
 const User = mongoose.model("User", userSchema);
 
