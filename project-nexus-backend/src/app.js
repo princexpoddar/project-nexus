@@ -18,4 +18,18 @@ app.get("/health", (req, res) => {
     res.json({ status: "ok", project: "project-nexus" });
 });
 
+// 404 handler - must be after all routes
+app.use((req, res) => {
+    res.status(404).json({ message: "Route not found" });
+});
+
+// Error handler middleware - must be last
+app.use((err, req, res, next) => {
+    console.error("Error:", err);
+    res.status(err.status || 500).json({
+        message: err.message || "Internal server error",
+        ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
+    });
+});
+
 export default app;
